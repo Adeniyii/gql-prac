@@ -49,6 +49,7 @@ export class User extends BaseEntity {
   @Field(() => SubscriptionEnum)
   subscription!: SubscriptionEnum;
 
+  @Field(() => [Collection], {nullable: true})
   @OneToMany(() => Collection, (collection) => collection.owner, {nullable: true})
   collections: Collection[]
 

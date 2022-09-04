@@ -1,4 +1,4 @@
-import { Field, ID, ObjectType } from "type-graphql";
+import { Field, ID, Int, ObjectType } from "type-graphql";
 import { BaseEntity, Column, CreateDateColumn, Entity, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Book } from "./Book";
 import { User } from "./User";
@@ -14,13 +14,14 @@ export class Collection extends BaseEntity {
   @Column()
   name!: string;
 
-	@Field()
-	@Column()
-	ownerId!: number
+  @Field(() => Int)
+  @Column()
+  ownerId!: number;
 
   @ManyToOne(() => User, (user) => user.collections)
   owner!: User;
 
+	@Field(() => [Book], {nullable: true})
   @ManyToMany(() => Book)
   @JoinTable()
   books!: Book[];

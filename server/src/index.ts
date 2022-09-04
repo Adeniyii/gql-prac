@@ -10,6 +10,7 @@ import { __isprod__ } from "./constants";
 import { IContext } from "./types";
 import { authChecker } from "./helpers/authChecker";
 import { BookResolver } from "./resolvers/bookResolver";
+import { CollectionResolver } from "./resolvers/collectionResolver";
 
 const main = async () => {
   const db = await AppSource.initialize();
@@ -41,7 +42,7 @@ const main = async () => {
 
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [UserResolver, BookResolver],
+      resolvers: [UserResolver, BookResolver, CollectionResolver],
       authChecker: authChecker,
     }),
     context: ({ req, res }): IContext => ({ req, res, db }),

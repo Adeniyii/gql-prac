@@ -17,6 +17,7 @@ import {
 } from "type-graphql";
 import { IContext } from "../types";
 import argon2 from "argon2";
+import { Collection } from "../entities/Collection";
 
 // Q: Is @InputType() different from @ArgsType()?
 // A: Of course! @InputType will generate a real GraphQLInputType type and should be used when we need a nested object in the args:
@@ -74,6 +75,14 @@ const UserErrorUnion = createUnionType({
 
 @Resolver(User)
 class UserResolver {
+  /*
+  Alternative to fetching collections on user using {relations: true}
+  @FieldResolver()
+  async collections(@Root() user: User) {
+    // TODO: Write dataloader for this field resolver
+    return Collection.find({ where: { ownerId: user.id } });
+  } */
+
   @FieldResolver()
   email(@Root() root: User, @Ctx() { req }: IContext) {
     if (root.id !== req.session.userId) return "";
@@ -84,17 +93,17 @@ class UserResolver {
   async me(@Ctx() { req, db }: IContext) {
     const userRepo = db.getRepository(User);
     const user = await userRepo.findOne({ where: { id: req.session.userId } });
-    console.log("user: ", user);
-
     if (!user) return null;
     return user;
   }
 
   @Query(() => [User], { nullable: true })
   async users(): Promise<User[] | null> {
-    return await User.find({relations: {
-      collections: true
-    }});
+    return await User.find({
+      relations: {
+        collections: true,
+      },
+    });
   }
 
   @Query(() => User, { nullable: true })
@@ -139,17 +148,17 @@ class UserResolver {
     return { user };
   }
 
-	@Authorized(["ADMIN"])
-	@Mutation(() => Boolean)
-	async deactivate(@Arg("id") id: number){
-		await User.createQueryBuilder("u")
+  @Authorized(["ADMIN"])
+  @Mutation(() => Boolean)
+  async deactivate(@Arg("id") id: number) {
+    await User.createQueryBuilder("u")
       .delete()
       .from(User)
       .where("id = :id", { id })
-			.execute();
+      .execute();
 
-		return true;
-	}
+    return true;
+  }
 }
 
 export default UserResolver;

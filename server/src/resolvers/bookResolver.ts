@@ -1,5 +1,5 @@
 import { Book } from "../entities/Book";
-import { Query, Resolver } from "type-graphql";
+import { Arg, Query, Resolver } from "type-graphql";
 
 @Resolver(Book)
 export class BookResolver {
@@ -7,4 +7,11 @@ export class BookResolver {
 	async books(){
 		return Book.find({})
 	}
+
+	@Query(() => Book)
+	async book(@Arg("id") id: number){
+		return Book.findOne({where: {id}})
+	}
+
+	// TODO: add resolvers to create, update, and delete a book -- all with admin only priviledges
 }
