@@ -1,0 +1,24 @@
+query Me {
+  me {
+    id
+    username
+    email
+    subscription
+    role
+    collections {
+      name
+      id
+      ownerId
+      books {
+        id
+        title
+        author
+        publishedAt
+      }
+      createdAt
+      updatedAt
+    }
+    createdAt
+    updatedAt
+  }
+}
