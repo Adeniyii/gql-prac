@@ -11,6 +11,7 @@ import { IContext } from "./types";
 import { authChecker } from "./helpers/authChecker";
 import { BookResolver } from "./resolvers/bookResolver";
 import { CollectionResolver } from "./resolvers/collectionResolver";
+import { createUserLoader } from "./helpers/createUserLoader";
 
 const main = async () => {
   const db = await AppSource.initialize();
@@ -45,7 +46,7 @@ const main = async () => {
       resolvers: [UserResolver, BookResolver, CollectionResolver],
       authChecker: authChecker,
     }),
-    context: ({ req, res }): IContext => ({ req, res, db }),
+    context: ({ req, res }): IContext => ({ req, res, db, dataloaders: {user: createUserLoader()} }),
   });
   await apolloServer.start();
   // to enable apollo playground to send cookies to this server

@@ -17,7 +17,6 @@ import {
 } from "type-graphql";
 import { IContext } from "../types";
 import argon2 from "argon2";
-import { Collection } from "../entities/Collection";
 
 // Q: Is @InputType() different from @ArgsType()?
 // A: Of course! @InputType will generate a real GraphQLInputType type and should be used when we need a nested object in the args:
@@ -84,9 +83,13 @@ class UserResolver {
   } */
 
   @FieldResolver()
-  email(@Root() root: User, @Ctx() { req }: IContext) {
-    if (root.id !== req.session.userId) return "";
-    return root.email;
+  async email(@Root() user: User, @Ctx() { req, dataloaders }: IContext) {
+    if (!req?.session?.userId){
+      return ""
+    }
+    const requestingUser = await dataloaders.user.load(req.session.userId)
+    if (user.id !== req.session.userId && requestingUser?.role !== "ADMIN") return "";
+    return user.email;
   }
 
   @Query(() => User, { nullable: true })
@@ -97,6 +100,7 @@ class UserResolver {
     return user;
   }
 
+  @Authorized(["ADMIN"])
   @Query(() => [User], { nullable: true })
   async users(): Promise<User[] | null> {
     return await User.find({

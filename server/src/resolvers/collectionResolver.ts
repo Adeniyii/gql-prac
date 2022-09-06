@@ -1,7 +1,17 @@
 import { Collection } from "../entities/Collection";
 import { User } from "../entities/User";
 import { IContext } from "../types";
-import { Arg, Ctx, Mutation, Query, Resolver } from "type-graphql";
+import { Arg, Args, ArgsType, Ctx, Field, Int, Mutation, Query, Resolver } from "type-graphql";
+import { Book } from "../entities/Book";
+
+@ArgsType()
+class AddBookToCollectionArgs{
+  @Field(() => Int)
+  bookId!: number;
+
+  @Field(() => Int)
+  collectionId!: number;
+}
 
 @Resolver(Collection)
 export class CollectionResolver {
@@ -22,5 +32,16 @@ export class CollectionResolver {
 
     const result = await Collection.save(collection);
     return result;
+  }
+
+  @Mutation(() => Collection, {nullable: true})
+  async addBookToCollection(@Args() {collectionId: id, bookId}: AddBookToCollectionArgs, @Ctx() {req}: IContext){
+    const book = await Book.findOne({where: {id: bookId}})
+    const collection = await Collection.findOne({where: {id}, relations: {books: true}})
+
+    if (!book || !collection || collection.ownerId !== req?.session?.userId) return null
+
+    collection.books = [...collection.books, book]
+    return Collection.save(collection)
   }
 }

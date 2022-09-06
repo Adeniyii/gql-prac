@@ -47,10 +47,17 @@ export type FieldError = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  addBookToCollection?: Maybe<Collection>;
   createCollection?: Maybe<Collection>;
   deactivate: Scalars['Boolean'];
   login: UserErrorResponse;
   register: User;
+};
+
+
+export type MutationAddBookToCollectionArgs = {
+  bookId: Scalars['Int'];
+  collectionId: Scalars['Int'];
 };
 
 
@@ -78,10 +85,17 @@ export type MutationRegisterArgs = {
   username: Scalars['String'];
 };
 
+export type PaginatedBooks = {
+  __typename?: 'PaginatedBooks';
+  books: Array<Book>;
+  hasMore: Scalars['Boolean'];
+  nextCursor?: Maybe<Scalars['String']>;
+};
+
 export type Query = {
   __typename?: 'Query';
   book: Book;
-  books: Array<Book>;
+  books: PaginatedBooks;
   getcollections: Array<Collection>;
   me?: Maybe<User>;
   user?: Maybe<User>;
@@ -91,6 +105,12 @@ export type Query = {
 
 export type QueryBookArgs = {
   id: Scalars['Float'];
+};
+
+
+export type QueryBooksArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  take: Scalars['Int'];
 };
 
 export enum Role {
@@ -123,10 +143,21 @@ export type UserResponse = {
   user: User;
 };
 
-export type BooksQueryVariables = Exact<{ [key: string]: never; }>;
+export type BooksQueryVariables = Exact<{
+  take: Scalars['Int'];
+  cursor?: InputMaybe<Scalars['String']>;
+}>;
 
 
-export type BooksQuery = { __typename?: 'Query', books: Array<{ __typename?: 'Book', id: string, title: string, author: string, publishedAt: string }> };
+export type BooksQuery = { __typename?: 'Query', books: { __typename?: 'PaginatedBooks', hasMore: boolean, nextCursor?: string | null, books: Array<{ __typename?: 'Book', id: string, title: string, author: string, publishedAt: string }> } };
+
+export type LoginMutationVariables = Exact<{
+  username: Scalars['String'];
+  password: Scalars['String'];
+}>;
+
+
+export type LoginMutation = { __typename?: 'Mutation', login: { __typename?: 'ErrorResponse', errors: Array<{ __typename?: 'FieldError', field: string, message: string }> } | { __typename?: 'UserResponse', user: { __typename?: 'User', id: string, username: string, email: string, subscription: Subscription } } };
 
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -135,12 +166,16 @@ export type MeQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: st
 
 
 export const BooksDocument = gql`
-    query Books {
-  books {
-    id
-    title
-    author
-    publishedAt
+    query Books($take: Int!, $cursor: String) {
+  books(take: $take, cursor: $cursor) {
+    hasMore
+    nextCursor
+    books {
+      id
+      title
+      author
+      publishedAt
+    }
   }
 }
     `;
@@ -157,10 +192,12 @@ export const BooksDocument = gql`
  * @example
  * const { data, loading, error } = useBooksQuery({
  *   variables: {
+ *      take: // value for 'take'
+ *      cursor: // value for 'cursor'
  *   },
  * });
  */
-export function useBooksQuery(baseOptions?: Apollo.QueryHookOptions<BooksQuery, BooksQueryVariables>) {
+export function useBooksQuery(baseOptions: Apollo.QueryHookOptions<BooksQuery, BooksQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
         return Apollo.useQuery<BooksQuery, BooksQueryVariables>(BooksDocument, options);
       }
@@ -171,6 +208,53 @@ export function useBooksLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<Book
 export type BooksQueryHookResult = ReturnType<typeof useBooksQuery>;
 export type BooksLazyQueryHookResult = ReturnType<typeof useBooksLazyQuery>;
 export type BooksQueryResult = Apollo.QueryResult<BooksQuery, BooksQueryVariables>;
+export const LoginDocument = gql`
+    mutation Login($username: String!, $password: String!) {
+  login(username: $username, password: $password) {
+    ... on UserResponse {
+      user {
+        id
+        username
+        email
+        subscription
+      }
+    }
+    ... on ErrorResponse {
+      errors {
+        field
+        message
+      }
+    }
+  }
+}
+    `;
+export type LoginMutationFn = Apollo.MutationFunction<LoginMutation, LoginMutationVariables>;
+
+/**
+ * __useLoginMutation__
+ *
+ * To run a mutation, you first call `useLoginMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useLoginMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [loginMutation, { data, loading, error }] = useLoginMutation({
+ *   variables: {
+ *      username: // value for 'username'
+ *      password: // value for 'password'
+ *   },
+ * });
+ */
+export function useLoginMutation(baseOptions?: Apollo.MutationHookOptions<LoginMutation, LoginMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<LoginMutation, LoginMutationVariables>(LoginDocument, options);
+      }
+export type LoginMutationHookResult = ReturnType<typeof useLoginMutation>;
+export type LoginMutationResult = Apollo.MutationResult<LoginMutation>;
+export type LoginMutationOptions = Apollo.BaseMutationOptions<LoginMutation, LoginMutationVariables>;
 export const MeDocument = gql`
     query Me {
   me {

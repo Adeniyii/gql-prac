@@ -1,8 +1,12 @@
-query Books {
-  books {
-    id
-    title
-    author
-    publishedAt
+query Books($take: Int!, $cursor: String) {
+  books(take: $take, cursor: $cursor) {
+    hasMore
+    nextCursor
+    books {
+      id
+      title
+      author
+      publishedAt
+    }
   }
 }
