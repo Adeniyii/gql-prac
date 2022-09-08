@@ -1,6 +1,6 @@
 import React from "react";
 import Wrapper from "../components/Wrapper";
-import withApolloClient from "../utils/createApolloClient";
+import { withApollo } from "../utils/createApolloClient";
 
 const register = () => {
   return (
@@ -49,4 +49,4 @@ const register = () => {
   );
 };
 
-export default withApolloClient({ ssr: false })(register);
+export default withApollo({ ssr: false })(register);

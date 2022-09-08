@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { useRouter } from "next/router";
 import React from "react";
-import { useMeQuery } from "../types/graphql";
+import { useMeQuery, useLogoutMutation } from "../types/graphql";
 
 const Nav = () => {
   const { data, loading } = useMeQuery({skip: typeof window === "undefined"});
+  const [logout, {client}] = useLogoutMutation()
+  const router = useRouter()
 
   let body;
 
@@ -24,7 +27,23 @@ const Nav = () => {
     body = (
       <>
         <span>{data?.me?.username}</span>
-        <button>Logout</button>
+        <button className="link" onClick={async () => {
+          logout({update: async (cache) => {
+            // await client.clearStore()
+            cache.evict({
+              id: "ROOT_QUERY",
+              fieldName: "me"
+            })
+            // cache.modify({
+            //   id: "ROOT_QUERY",
+            //   fields(existingUserRef, {DELETE}){
+            //     return DELETE;
+            //   }
+            // })
+            // cache.gc()
+            router.push("/login")
+          }})
+          }}>Logout</button>
       </>
     );
   }

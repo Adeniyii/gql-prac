@@ -1,5 +1,5 @@
-query Books($take: Int!, $cursor: String) {
-  books(take: $take, cursor: $cursor) {
+query PaginatedBooks($take: Int!, $cursor: String) {
+  paginatedBooks(take: $take, cursor: $cursor) {
     hasMore
     nextCursor
     books {

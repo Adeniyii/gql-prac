@@ -1,20 +1,20 @@
 import type { NextPage } from "next";
 import Wrapper from "../components/Wrapper";
-import { useBooksQuery } from "../types/graphql";
-import withApolloClient from "../utils/createApolloClient";
+import { usePaginatedBooksQuery } from "../types/graphql";
+import { withApollo } from "../utils/createApolloClient";
 
 const Home: NextPage = () => {
-  const { data, loading, error, fetchMore } = useBooksQuery({
+  const { data, loading, error, fetchMore } = usePaginatedBooksQuery({
     variables: { take: 10, cursor: null },
     notifyOnNetworkStatusChange: true,
   });
 
   let body;
 
-  if (data?.books.books.length){
+  if (data?.paginatedBooks.books.length){
     body = (
       <ul className="flex flex-col gap-4">
-        {data?.books.books.map((book) => (
+        {data?.paginatedBooks.books.map((book) => (
           <li
             key={book.id}
             className="p-4 rounded-lg min-h-[100px] border border-gray-700 bg-gray-800 font-semibold text-lg"
@@ -36,11 +36,11 @@ const Home: NextPage = () => {
     <Wrapper>
       <h1 className="mb-10 text-2xl font-semibold">Books</h1>
       {body}
-      {data?.books.hasMore && (
+      {data?.paginatedBooks.hasMore && (
         <button
           className="mt-5 py-2.5 px-5 mr-2 text-sm font-medium rounded-lg border text-gray-400 border-gray-600 hover:text-white hover:bg-gray-700 inline-flex items-center"
           onClick={() =>
-            fetchMore({ variables: { cursor: data.books.nextCursor } })
+            fetchMore({ variables: { cursor: data.paginatedBooks.nextCursor } })
           }
           disabled={loading}
         >
@@ -70,4 +70,4 @@ const Home: NextPage = () => {
   );
 };
 
-export default withApolloClient({ ssr: true })(Home);
+export default withApollo({ ssr: true })(Home);

@@ -1,13 +1,25 @@
-import React from "react";
+import React, { useState } from "react";
 import Wrapper from "../components/Wrapper";
-import withApolloClient from "../utils/createApolloClient";
+import { useLoginMutation, MeDocument } from "../types/graphql";
+import { withApollo } from "../utils/createApolloClient";
 
 const login = () => {
+	const [login, {data, loading, error}] = useLoginMutation()
+	const [username, setUsername] = useState("")
+	const [password, setPassword] = useState("")
+
   return (
     <Wrapper>
       <div className="max-w-3xl mx-auto">
-        <form className="max-w-xl mx-auto">
-        	<h1 className="mb-10 text-2xl font-semibold">Login</h1>
+        <form
+          className="max-w-xl mx-auto"
+          onSubmit={(e) => {
+						e.preventDefault()
+						login({ variables: { username, password }, update: (cache, {data}) => {
+							cache.writeQuery({ query: MeDocument, data: {me: data?.login?.user} });
+						} })}}
+        >
+          <h1 className="mb-10 text-2xl font-semibold">Login</h1>
           <div className="mb-6">
             <label
               htmlFor="username"
@@ -21,6 +33,7 @@ const login = () => {
               className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
               placeholder="Le goat"
               required
+              onChange={(e) => setUsername(e.target.value)}
             />
           </div>
           <div className="mb-6">
@@ -35,6 +48,7 @@ const login = () => {
               id="password"
               className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
               required
+              onChange={(e) => setPassword(e.target.value)}
             />
           </div>
           <button
@@ -49,4 +63,4 @@ const login = () => {
   );
 };
 
-export default withApolloClient({ ssr: false })(login);
+export default withApollo({ ssr: false })(login);

@@ -50,27 +50,29 @@ class FieldError {
   message: string;
 }
 
-@ObjectType()
-class ErrorResponse {
-  @Field(() => [FieldError])
-  errors: FieldError[];
-}
+// @ObjectType()
+// class ErrorResponse {
+//   @Field(() => [FieldError])
+//   errors: FieldError[];
+// }
 
 @ObjectType()
-class UserResponse {
-  @Field(() => User)
-  user: User;
+class UserErrorResponse {
+  @Field(() => User, {nullable: true})
+  user?: User;
+  @Field(() => [FieldError], {nullable: true})
+  errors?: FieldError[];
 }
 
-const UserErrorUnion = createUnionType({
-  name: "UserErrorResponse", // the name of the GraphQL union
-  types: () => [UserResponse, ErrorResponse] as const, // function that returns tuple of object types classes
-  resolveType: (value) => {
-    if ("errors" in value) return ErrorResponse;
-    if ("user" in value) return UserResponse;
-    return undefined;
-  },
-});
+// const UserErrorUnion = createUnionType({
+//   name: "UserErrorResponse", // the name of the GraphQL union
+//   types: () => [UserResponse, ErrorResponse] as const, // function that returns tuple of object types classes
+//   resolveType: (value) => {
+//     if ("errors" in value) return ErrorResponse;
+//     if ("user" in value) return UserResponse;
+//     return undefined;
+//   },
+// });
 
 @Resolver(User)
 class UserResolver {
@@ -84,16 +86,20 @@ class UserResolver {
 
   @FieldResolver()
   async email(@Root() user: User, @Ctx() { req, dataloaders }: IContext) {
-    if (!req?.session?.userId){
-      return ""
+    if (!req?.session?.userId) {
+      return "";
     }
-    const requestingUser = await dataloaders.user.load(req.session.userId)
-    if (user.id !== req.session.userId && requestingUser?.role !== "ADMIN") return "";
+    const requestingUser = await dataloaders.user.load(req.session.userId);
+    if (user.id !== req.session.userId && requestingUser?.role !== "ADMIN")
+      return "";
     return user.email;
   }
 
   @Query(() => User, { nullable: true })
   async me(@Ctx() { req, db }: IContext) {
+    if (!req?.session?.userId){
+      return null
+    }
     const userRepo = db.getRepository(User);
     const user = await userRepo.findOne({ where: { id: req.session.userId } });
     if (!user) return null;
@@ -132,12 +138,15 @@ class UserResolver {
     return newUser.raw[0];
   }
 
-  @Mutation(() => UserErrorUnion)
+  @Mutation(() => UserErrorResponse)
   async login(
     @Ctx() { req }: IContext,
     @Args() { password, ...input }: LoginInput
-  ): Promise<typeof UserErrorUnion> {
-    const user = await User.findOne({ where: { ...input } });
+  ): Promise<UserErrorResponse> {
+    const user = await User.findOne({
+      where: { ...input },
+      relations: { collections: true },
+    });
     if (!user) {
       return {
         errors: [{ field: "username", message: "username does not exist" }],
@@ -150,6 +159,12 @@ class UserResolver {
 
     req.session.userId = user.id;
     return { user };
+  }
+
+  @Mutation(() => Boolean)
+  async logout(@Ctx() {res}: IContext){
+    res.clearCookie("qid")
+    return true
   }
 
   @Authorized(["ADMIN"])

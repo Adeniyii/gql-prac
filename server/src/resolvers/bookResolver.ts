@@ -22,7 +22,7 @@ class PaginatedBooks{
 @Resolver(Book)
 export class BookResolver {
   @Query(() => PaginatedBooks)
-  async books(@Args() { take, cursor }: PaginationInput) {
+  async paginatedBooks(@Args() { take, cursor }: PaginationInput) {
 		const maxTake = Math.min(20, take)
 		const takeExtra = maxTake + 1
 

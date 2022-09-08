@@ -34,11 +34,6 @@ export type Collection = {
   updatedAt: Scalars['DateTime'];
 };
 
-export type ErrorResponse = {
-  __typename?: 'ErrorResponse';
-  errors: Array<FieldError>;
-};
-
 export type FieldError = {
   __typename?: 'FieldError';
   field: Scalars['String'];
@@ -51,6 +46,7 @@ export type Mutation = {
   createCollection?: Maybe<Collection>;
   deactivate: Scalars['Boolean'];
   login: UserErrorResponse;
+  logout: Scalars['Boolean'];
   register: User;
 };
 
@@ -95,9 +91,9 @@ export type PaginatedBooks = {
 export type Query = {
   __typename?: 'Query';
   book: Book;
-  books: PaginatedBooks;
   getcollections: Array<Collection>;
   me?: Maybe<User>;
+  paginatedBooks: PaginatedBooks;
   user?: Maybe<User>;
   users?: Maybe<Array<User>>;
 };
@@ -108,7 +104,7 @@ export type QueryBookArgs = {
 };
 
 
-export type QueryBooksArgs = {
+export type QueryPaginatedBooksArgs = {
   cursor?: InputMaybe<Scalars['String']>;
   take: Scalars['Int'];
 };
@@ -136,20 +132,11 @@ export type User = {
   username: Scalars['String'];
 };
 
-export type UserErrorResponse = ErrorResponse | UserResponse;
-
-export type UserResponse = {
-  __typename?: 'UserResponse';
-  user: User;
+export type UserErrorResponse = {
+  __typename?: 'UserErrorResponse';
+  errors?: Maybe<Array<FieldError>>;
+  user?: Maybe<User>;
 };
-
-export type BooksQueryVariables = Exact<{
-  take: Scalars['Int'];
-  cursor?: InputMaybe<Scalars['String']>;
-}>;
-
-
-export type BooksQuery = { __typename?: 'Query', books: { __typename?: 'PaginatedBooks', hasMore: boolean, nextCursor?: string | null, books: Array<{ __typename?: 'Book', id: string, title: string, author: string, publishedAt: string }> } };
 
 export type LoginMutationVariables = Exact<{
   username: Scalars['String'];
@@ -157,73 +144,42 @@ export type LoginMutationVariables = Exact<{
 }>;
 
 
-export type LoginMutation = { __typename?: 'Mutation', login: { __typename?: 'ErrorResponse', errors: Array<{ __typename?: 'FieldError', field: string, message: string }> } | { __typename?: 'UserResponse', user: { __typename?: 'User', id: string, username: string, email: string, subscription: Subscription } } };
+export type LoginMutation = { __typename?: 'Mutation', login: { __typename?: 'UserErrorResponse', user?: { __typename?: 'User', id: string, username: string, email: string, role: Role, createdAt: any, updatedAt: any, subscription: Subscription } | null, errors?: Array<{ __typename?: 'FieldError', field: string, message: string }> | null } };
+
+export type LogoutMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type LogoutMutation = { __typename?: 'Mutation', logout: boolean };
 
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type MeQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, username: string, email: string, subscription: Subscription, role: Role, createdAt: any, updatedAt: any, collections?: Array<{ __typename?: 'Collection', name: string, id: string, ownerId: number, createdAt: any, updatedAt: any, books?: Array<{ __typename?: 'Book', id: string, title: string, author: string, publishedAt: string }> | null }> | null } | null };
+export type MeQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, username: string, email: string, subscription: Subscription, role: Role, createdAt: any, updatedAt: any } | null };
+
+export type PaginatedBooksQueryVariables = Exact<{
+  take: Scalars['Int'];
+  cursor?: InputMaybe<Scalars['String']>;
+}>;
 
 
-export const BooksDocument = gql`
-    query Books($take: Int!, $cursor: String) {
-  books(take: $take, cursor: $cursor) {
-    hasMore
-    nextCursor
-    books {
-      id
-      title
-      author
-      publishedAt
-    }
-  }
-}
-    `;
+export type PaginatedBooksQuery = { __typename?: 'Query', paginatedBooks: { __typename?: 'PaginatedBooks', hasMore: boolean, nextCursor?: string | null, books: Array<{ __typename?: 'Book', id: string, title: string, author: string, publishedAt: string }> } };
 
-/**
- * __useBooksQuery__
- *
- * To run a query within a React component, call `useBooksQuery` and pass it any options that fit your needs.
- * When your component renders, `useBooksQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useBooksQuery({
- *   variables: {
- *      take: // value for 'take'
- *      cursor: // value for 'cursor'
- *   },
- * });
- */
-export function useBooksQuery(baseOptions: Apollo.QueryHookOptions<BooksQuery, BooksQueryVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<BooksQuery, BooksQueryVariables>(BooksDocument, options);
-      }
-export function useBooksLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<BooksQuery, BooksQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<BooksQuery, BooksQueryVariables>(BooksDocument, options);
-        }
-export type BooksQueryHookResult = ReturnType<typeof useBooksQuery>;
-export type BooksLazyQueryHookResult = ReturnType<typeof useBooksLazyQuery>;
-export type BooksQueryResult = Apollo.QueryResult<BooksQuery, BooksQueryVariables>;
+
 export const LoginDocument = gql`
     mutation Login($username: String!, $password: String!) {
   login(username: $username, password: $password) {
-    ... on UserResponse {
-      user {
-        id
-        username
-        email
-        subscription
-      }
+    user {
+      id
+      username
+      email
+      role
+      createdAt
+      updatedAt
+      subscription
     }
-    ... on ErrorResponse {
-      errors {
-        field
-        message
-      }
+    errors {
+      field
+      message
     }
   }
 }
@@ -255,6 +211,36 @@ export function useLoginMutation(baseOptions?: Apollo.MutationHookOptions<LoginM
 export type LoginMutationHookResult = ReturnType<typeof useLoginMutation>;
 export type LoginMutationResult = Apollo.MutationResult<LoginMutation>;
 export type LoginMutationOptions = Apollo.BaseMutationOptions<LoginMutation, LoginMutationVariables>;
+export const LogoutDocument = gql`
+    mutation Logout {
+  logout
+}
+    `;
+export type LogoutMutationFn = Apollo.MutationFunction<LogoutMutation, LogoutMutationVariables>;
+
+/**
+ * __useLogoutMutation__
+ *
+ * To run a mutation, you first call `useLogoutMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useLogoutMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [logoutMutation, { data, loading, error }] = useLogoutMutation({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useLogoutMutation(baseOptions?: Apollo.MutationHookOptions<LogoutMutation, LogoutMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<LogoutMutation, LogoutMutationVariables>(LogoutDocument, options);
+      }
+export type LogoutMutationHookResult = ReturnType<typeof useLogoutMutation>;
+export type LogoutMutationResult = Apollo.MutationResult<LogoutMutation>;
+export type LogoutMutationOptions = Apollo.BaseMutationOptions<LogoutMutation, LogoutMutationVariables>;
 export const MeDocument = gql`
     query Me {
   me {
@@ -263,19 +249,6 @@ export const MeDocument = gql`
     email
     subscription
     role
-    collections {
-      name
-      id
-      ownerId
-      books {
-        id
-        title
-        author
-        publishedAt
-      }
-      createdAt
-      updatedAt
-    }
     createdAt
     updatedAt
   }
@@ -308,3 +281,46 @@ export function useMeLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<MeQuery
 export type MeQueryHookResult = ReturnType<typeof useMeQuery>;
 export type MeLazyQueryHookResult = ReturnType<typeof useMeLazyQuery>;
 export type MeQueryResult = Apollo.QueryResult<MeQuery, MeQueryVariables>;
+export const PaginatedBooksDocument = gql`
+    query PaginatedBooks($take: Int!, $cursor: String) {
+  paginatedBooks(take: $take, cursor: $cursor) {
+    hasMore
+    nextCursor
+    books {
+      id
+      title
+      author
+      publishedAt
+    }
+  }
+}
+    `;
+
+/**
+ * __usePaginatedBooksQuery__
+ *
+ * To run a query within a React component, call `usePaginatedBooksQuery` and pass it any options that fit your needs.
+ * When your component renders, `usePaginatedBooksQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = usePaginatedBooksQuery({
+ *   variables: {
+ *      take: // value for 'take'
+ *      cursor: // value for 'cursor'
+ *   },
+ * });
+ */
+export function usePaginatedBooksQuery(baseOptions: Apollo.QueryHookOptions<PaginatedBooksQuery, PaginatedBooksQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<PaginatedBooksQuery, PaginatedBooksQueryVariables>(PaginatedBooksDocument, options);
+      }
+export function usePaginatedBooksLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<PaginatedBooksQuery, PaginatedBooksQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<PaginatedBooksQuery, PaginatedBooksQueryVariables>(PaginatedBooksDocument, options);
+        }
+export type PaginatedBooksQueryHookResult = ReturnType<typeof usePaginatedBooksQuery>;
+export type PaginatedBooksLazyQueryHookResult = ReturnType<typeof usePaginatedBooksLazyQuery>;
+export type PaginatedBooksQueryResult = Apollo.QueryResult<PaginatedBooksQuery, PaginatedBooksQueryVariables>;

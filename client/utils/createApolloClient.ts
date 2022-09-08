@@ -1,13 +1,13 @@
 import { ApolloClient, InMemoryCache } from "@apollo/client";
 import { NextPageContext } from "next";
-import { withApollo } from "next-apollo"
+import { withApollo as createWithApollo } from "next-apollo"
 import { PaginatedBooks } from "../types/graphql";
 
 const cache = new InMemoryCache({
   typePolicies: {
     Query: {
       fields: {
-        books:{
+        paginatedBooks:{
           keyArgs: false,
           merge: (existing: PaginatedBooks, incoming: PaginatedBooks) => {
             const books = [...(existing?.books || []), ...(incoming?.books || [])]
@@ -28,4 +28,4 @@ const client = (ctx: NextPageContext | undefined) => new ApolloClient({
 	cache
 })
 
-export default withApollo<{}, {}>(client);
+export const withApollo = createWithApollo<{}, {}>(client);
